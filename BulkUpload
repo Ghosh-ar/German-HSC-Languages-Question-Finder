@@ -1,0 +1,97 @@
+import React, { useState } from "react";
+import { ExtractDataFromUploadedFile, UploadFile } from "@/integrations/Core";
+import { Question } from "@/entities/Question";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Upload, FileText, Download } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+export default function BulkUpload({ onSubmit, isSubmitting }) {
+  const [file, setFile] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.type === "text/csv" || selectedFile.name.endsWith('.csv')) {
+        setFile(selectedFile);
+        setError(null);
+      } else {
+        setError("Please select a CSV file");
+      }
+    }
+  };
+
+  const processFile = async () => {
+    if (!file) return;
+
+    setIsProcessing(true);
+    setProgress(0);
+    setError(null);
+
+    try {
+      setProgress(25);
+      
+      // Upload file
+      const { file_url } = await UploadFile({ file });
+      setProgress(50);
+
+      // Extract data using the Question schema
+      const result = await ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: {
+          type: "array",
+          items: Question.schema()
+        }
+      });
+
+      setProgress(75);
+
+      if (result.status === "success" && result.output) {
+        setPreviewData(result.output);
+        setProgress(100);
+      } else {
+        throw new Error(result.details || "Failed to process file");
+      }
+    } catch (error) {
+      setError(`Error processing file: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUpload = () => {
+    if (previewData) {
+      onSubmit(previewData);
+      setFile(null);
+      setPreviewData(null);
+      setProgress(0);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csvContent = [
+      // Header row
+      "question_text,year,paper_type,section,question_number,theme,subtopic,skill_type,difficulty_level,marks,marking_criteria,sample_answer,key_points,tags,notes",
+      // Sample row
+      '"Beschreiben Sie die Rolle der Familie in der deutschen Gesellschaft heute.",2023,continuers,"Section II",1a,"Familie und Freundschaft","Moderne Familie",writing,intermediate,10,"Students should discuss traditional vs modern family structures...","In der heutigen deutschen Gesellschaft...","family structure|social changes|tradition","family|society|modern","Focus on contemporary family dynamics"'
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'questions_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6">
+ 
