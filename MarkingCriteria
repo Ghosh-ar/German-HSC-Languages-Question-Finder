@@ -1,0 +1,97 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Eye, EyeOff, CheckCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function MarkingCriteria({ question, showCriteria, setShowCriteria }) {
+  if (!question) return null;
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-semibold text-slate-900">
+            Marking Criteria & Model Answer
+          </CardTitle>
+          <Button
+            variant="outline"
+            onClick={() => setShowCriteria(!showCriteria)}
+            className="gap-2"
+          >
+            {showCriteria ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                Hide
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4" />
+                Show Criteria
+              </>
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+      
+      <AnimatePresence>
+        {showCriteria && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CardContent className="space-y-6">
+              {question.marking_criteria && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    Marking Criteria
+                  </h4>
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      {question.marking_criteria}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {question.key_points && question.key_points.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-3">Key Points to Include:</h4>
+                  <ul className="space-y-2">
+                    {question.key_points.map((point, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mt-0.5">
+                          {index + 1}
+                        </Badge>
+                        <span className="text-slate-700">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {question.sample_answer && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-3">Sample High-Quality Answer:</h4>
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      {question.sample_answer}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {question.notes && (
+                <div>
+                  <h4 className="font-semibold text-slate-900 mb-3">Additional Notes:</h4>
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <p className="text-slate-800 leading-relaxed">
+                      {question.notes}
+                    </p>
+                  </div>
+                </div>
+ 
