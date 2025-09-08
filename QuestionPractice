@@ -1,0 +1,97 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Clock, Play, Save, RotateCcw, Star } from "lucide-react";
+
+export default function QuestionPractice({
+  question,
+  studentAnswer,
+  setStudentAnswer,
+  hasAnswered,
+  timeSpent,
+  startTime,
+  selfRating,
+  setSelfRating,
+  onStart,
+  onSubmit,
+  onRestart,
+  formatTime
+}) {
+  if (!question) return null;
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+      <CardHeader>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <div className="flex gap-2 mb-3">
+              <Badge variant="outline" className={
+                question.paper_type === 'continuers' ? 
+                "bg-blue-50 text-blue-700 border-blue-200" : 
+                "bg-indigo-50 text-indigo-700 border-indigo-200"
+              }>
+                {question.paper_type === 'continuers' ? 'Continuers' : 'Extension'}
+              </Badge>
+              <Badge variant="outline" className="bg-slate-50 text-slate-700">
+                {question.year}
+              </Badge>
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                {question.skill_type}
+              </Badge>
+              {question.marks && (
+                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                  {question.marks} marks
+                </Badge>
+              )}
+            </div>
+            <CardTitle className="text-xl font-bold text-slate-900 mb-2">
+              {question.theme}
+            </CardTitle>
+            {question.subtopic && (
+              <p className="text-sm text-slate-600 mb-3">{question.subtopic}</p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Clock className="w-4 h-4" />
+            <span>{formatTime(timeSpent)}</span>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        <div>
+          <Label className="text-base font-medium text-slate-900">Question:</Label>
+          <div className="mt-2 p-4 bg-slate-50 rounded-lg">
+            <p className="text-slate-800 leading-relaxed">{question.question_text}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <Label htmlFor="answer" className="text-base font-medium text-slate-900">
+            Your Answer:
+          </Label>
+          <Textarea
+            id="answer"
+            value={studentAnswer}
+            onChange={(e) => setStudentAnswer(e.target.value)}
+            disabled={hasAnswered}
+            placeholder="Type your answer here..."
+            className="min-h-32 resize-none"
+          />
+        </div>
+
+        {hasAnswered && (
+          <div className="space-y-3">
+            <Label className="text-base font-medium text-slate-900">
+              How confident are you with your answer?
+            </Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <Button
+                  key={rating}
+                  variant={selfRating >= rating ? "default" : "outline"}
+ 
