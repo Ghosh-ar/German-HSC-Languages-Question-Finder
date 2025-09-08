@@ -1,0 +1,190 @@
+
+import React, { useState, useEffect, useCallback } from "react";
+import { Question } from "@/entities/Question";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { TrendingUp, BookOpen, Award, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function StatisticsPage() {
+  const [questions, setQuestions] = useState([]);
+  const [stats, setStats] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  const calculateStats = useCallback((questions) => {
+    const yearlyData = {};
+    const themeData = {};
+    const skillData = {};
+    const paperTypeData = { continuers: 0, extension: 0 };
+
+    questions.forEach(question => {
+      // Yearly distribution
+      yearlyData[question.year] = (yearlyData[question.year] || 0) + 1;
+      
+      // Theme distribution
+      themeData[question.theme] = (themeData[question.theme] || 0) + 1;
+      
+      // Skill distribution
+      skillData[question.skill_type] = (skillData[question.skill_type] || 0) + 1;
+      
+      // Paper type distribution
+      paperTypeData[question.paper_type]++;
+    });
+
+    setStats({
+      total: questions.length,
+      yearlyData: Object.entries(yearlyData).map(([year, count]) => ({ year: parseInt(year), count })).sort((a, b) => a.year - b.year),
+      themeData: Object.entries(themeData).map(([theme, count]) => ({ theme: theme.length > 20 ? theme.substring(0, 20) + "..." : theme, count })).sort((a, b) => b.count - a.count).slice(0, 10),
+      skillData: Object.entries(skillData).map(([skill, count]) => ({ skill, count })),
+      paperTypeData: [
+        { name: "Continuers", value: paperTypeData.continuers, color: "#3B82F6" },
+        { name: "Extension", value: paperTypeData.extension, color: "#6366F1" }
+      ]
+    });
+  }, []); // setStats is stable, so no need to add it to deps
+
+  const loadQuestions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedQuestions = await Question.list();
+      setQuestions(fetchedQuestions);
+      calculateStats(fetchedQuestions);
+    } catch (error) {
+      console.error("Error loading questions:", error);
+    }
+    setIsLoading(false);
+  }, [calculateStats]); // calculateStats is a dependency
+
+  useEffect(() => {
+    loadQuestions();
+  }, [loadQuestions]); // loadQuestions is a dependency
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-slate-200 rounded w-64 mb-4"></div>
+            <div className="h-4 bg-slate-200 rounded w-96 mb-8"></div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              {Array(4).fill(0).map((_, i) => (
+                <div key={i} className="h-32 bg-slate-200 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+            Question Statistics
+          </h1>
+          <p className="text-slate-600">
+            Analyze the distribution and patterns of HSC German questions
+          </p>
+        </motion.div>
+
+        {/* Summary Cards */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8"
+        >
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Total Questions</p>
+                  <CardTitle className="text-2xl font-bold mt-1">{stats.total}</CardTitle>
+                </div>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Continuers</p>
+                  <CardTitle className="text-2xl font-bold mt-1">{stats.paperTypeData?.[0]?.value || 0}</CardTitle>
+                </div>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Award className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Extension</p>
+                  <CardTitle className="text-2xl font-bold mt-1">{stats.paperTypeData?.[1]?.value || 0}</CardTitle>
+                </div>
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Year Range</p>
+                  <CardTitle className="text-2xl font-bold mt-1">
+                    {stats.yearlyData?.length > 0 ? 
+                      `${stats.yearlyData[0]?.year}-${stats.yearlyData[stats.yearlyData.length - 1]?.year}` : 
+                      "N/A"
+                    }
+                  </CardTitle>
+                </div>
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Calendar className="w-5 h-5 text-orange-600" />
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </motion.div>
+
+        {/* Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Questions by Year */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-sm border border-slate-200/60">
+              <CardHeader>
+                <CardTitle>Questions by Year</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={stats.yearlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="year" stroke="#64748b" />
+                    <YAxis stroke="#64748b" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px'
+                      }} 
+                    />
+                    <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} />
