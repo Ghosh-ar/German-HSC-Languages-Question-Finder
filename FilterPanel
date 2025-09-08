@@ -1,0 +1,97 @@
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X } from "lucide-react";
+
+const themes = [
+  "Familie und Freundschaft",
+  "Schule und Bildung", 
+  "Arbeit und Beruf",
+  "Umwelt und Nachhaltigkeit",
+  "Reisen und Tourismus",
+  "Technologie und Medien",
+  "Kultur und Tradition",
+  "Geschichte und Politik",
+  "Sport und Freizeit",
+  "Gesundheit und Lebensstil",
+  "Literatur und Kunst",
+  "Deutsche Gesellschaft",
+  "Globalisierung",
+  "Jugend und Identität",
+  "Integration und Migration"
+];
+
+const skillTypes = ["reading", "writing", "listening", "speaking", "grammar"];
+const difficultyLevels = ["basic", "intermediate", "advanced"];
+const years = Array.from({length: 15}, (_, i) => 2024 - i);
+
+export default function FilterPanel({ filters, onFilterChange, onClearAll }) {
+  return (
+    <div className="border-t border-slate-200 pt-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-slate-900">Filter Questions</h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearAll}
+          className="text-slate-500 hover:text-slate-700"
+        >
+          <X className="w-4 h-4 mr-1" />
+          Clear all
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Paper Type</label>
+          <Select
+            value={filters.paper_type}
+            onValueChange={(value) => onFilterChange("paper_type", value)}
+          >
+            <SelectTrigger className="bg-white/60">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="continuers">Continuers</SelectItem>
+              <SelectItem value="extension">Extension</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Theme</label>
+          <Select
+            value={filters.theme}
+            onValueChange={(value) => onFilterChange("theme", value)}
+          >
+            <SelectTrigger className="bg-white/60">
+              <SelectValue placeholder="All themes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All themes</SelectItem>
+              {themes.map((theme) => (
+                <SelectItem key={theme} value={theme}>
+                  {theme}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-slate-700">Skill Type</label>
+          <Select
+            value={filters.skill_type}
+            onValueChange={(value) => onFilterChange("skill_type", value)}
+          >
+            <SelectTrigger className="bg-white/60">
+              <SelectValue placeholder="All skills" />
+            </SelectTrigger>
+ 
