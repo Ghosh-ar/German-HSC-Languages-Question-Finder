@@ -1,0 +1,239 @@
+import React, { useState, useEffect } from "react";
+import { Question, StudentResponse } from "@/entities/all";
+import { User } from "@/entities/User";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Clock, Eye, EyeOff, Star, ChevronRight, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+import QuestionPractice from "../components/practice/QuestionPractice";
+import MarkingCriteria from "../components/practice/MarkingCriteria";
+
+export default function PracticePage() {
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [studentAnswer, setStudentAnswer] = useState("");
+  const [showCriteria, setShowCriteria] = useState(false);
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [timeSpent, setTimeSpent] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const [selfRating, setSelfRating] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [answeredQuestions, setAnsweredQuestions] = useState(new Set());
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    let interval;
+    if (startTime && !hasAnswered) {
+      interval = setInterval(() => {
+        setTimeSpent(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [startTime, hasAnswered]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [fetchedQuestions, user, responses] = await Promise.all([
+        Question.list(),
+        User.me(),
+        StudentResponse.list()
+      ]);
+      
+      setQuestions(fetchedQuestions);
+      setCurrentUser(user);
+      
+      // Track which questions this user has already answered
+      const userResponses = responses.filter(r => r.created_by === user.email);
+      const answeredIds = new Set(userResponses.map(r => r.question_id));
+      setAnsweredQuestions(answeredIds);
+      
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+    setIsLoading(false);
+  };
+
+  const currentQuestion = questions[currentQuestionIndex];
+
+  const startAnswer = () => {
+    setStartTime(Date.now());
+    setTimeSpent(0);
+  };
+
+  const submitAnswer = async () => {
+    if (!currentQuestion || !studentAnswer.trim()) return;
+
+    try {
+      await StudentResponse.create({
+        question_id: currentQuestion.id,
+        student_answer: studentAnswer,
+        time_spent: timeSpent,
+        self_rating: selfRating,
+        completed: true
+      });
+
+      setHasAnswered(true);
+      setAnsweredQuestions(prev => new Set([...prev, currentQuestion.id]));
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      resetQuestionState();
+    }
+  };
+
+  const resetQuestionState = () => {
+    setStudentAnswer("");
+    setShowCriteria(false);
+    setHasAnswered(false);
+    setTimeSpent(0);
+    setStartTime(null);
+    setSelfRating(0);
+  };
+
+  const restartCurrentQuestion = () => {
+    resetQuestionState();
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-slate-200 rounded w-64 mb-8"></div>
+            <div className="h-96 bg-slate-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto text-center py-16">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">No questions available</h2>
+          <p className="text-slate-600">Please upload some questions first to start practicing.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+                Practice Mode
+              </h1>
+              <p className="text-slate-600">
+                Answer questions and review marking criteria to improve your skills
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-white/60">
+                {currentQuestionIndex + 1} of {questions.length}
+              </Badge>
+              {answeredQuestions.has(currentQuestion?.id) && (
+                <Badge className="bg-green-100 text-green-800">
+                  Previously Answered
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <Progress 
+            value={((currentQuestionIndex + 1) / questions.length) * 100} 
+            className="h-2" 
+          />
+        </motion.div>
+
+        <div className="grid gap-6">
+          {/* Question Card */}
+          <motion.div
+            key={currentQuestionIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <QuestionPractice
+              question={currentQuestion}
+              studentAnswer={studentAnswer}
+              setStudentAnswer={setStudentAnswer}
+              hasAnswered={hasAnswered}
+              timeSpent={timeSpent}
+              startTime={startTime}
+              selfRating={selfRating}
+              setSelfRating={setSelfRating}
+              onStart={startAnswer}
+              onSubmit={submitAnswer}
+              onRestart={restartCurrentQuestion}
+              formatTime={formatTime}
+            />
+          </motion.div>
+
+          {/* Marking Criteria */}
+          <AnimatePresence>
+            {hasAnswered && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <MarkingCriteria
+                  question={currentQuestion}
+                  showCriteria={showCriteria}
+                  setShowCriteria={setShowCriteria}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Navigation */}
+          {hasAnswered && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex justify-center"
+            >
+              <Button
+                onClick={nextQuestion}
+                disabled={currentQuestionIndex >= questions.length - 1}
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                Next Question
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
