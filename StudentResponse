@@ -1,0 +1,33 @@
+{
+  "name": "StudentResponse",
+  "type": "object",
+  "properties": {
+    "question_id": {
+      "type": "string",
+      "description": "ID of the question answered"
+    },
+    "student_answer": {
+      "type": "string",
+      "description": "The student's written response"
+    },
+    "time_spent": {
+      "type": "integer",
+      "description": "Time spent answering in seconds"
+    },
+    "self_rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Student's self-assessment rating"
+    },
+    "completed": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the response was completed"
+    }
+  },
+  "required": [
+    "question_id",
+    "student_answer"
+  ]
+}
