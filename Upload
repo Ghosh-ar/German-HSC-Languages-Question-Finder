@@ -1,0 +1,150 @@
+import React, { useState } from "react";
+import { Question } from "@/entities/Question";
+import { ExtractDataFromUploadedFile, UploadFile } from "@/integrations/Core";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Upload as UploadIcon, Plus, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { motion, AnimatePresence } from "framer-motion";
+
+import QuestionForm from "../components/upload/QuestionForm";
+import BulkUpload from "../components/upload/BulkUpload";
+
+export default function UploadPage() {
+  const [activeTab, setActiveTab] = useState("single");
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleSingleUpload = async (questionData) => {
+    setIsUploading(true);
+    try {
+      await Question.create(questionData);
+      setUploadStatus({ type: "success", message: "Question uploaded successfully!" });
+      setTimeout(() => setUploadStatus(null), 3000);
+    } catch (error) {
+      setUploadStatus({ type: "error", message: "Failed to upload question. Please try again." });
+      setTimeout(() => setUploadStatus(null), 5000);
+    }
+    setIsUploading(false);
+  };
+
+  const handleBulkUpload = async (questions) => {
+    setIsUploading(true);
+    try {
+      await Question.bulkCreate(questions);
+      setUploadStatus({ 
+        type: "success", 
+        message: `Successfully uploaded ${questions.length} questions!` 
+      });
+      setTimeout(() => setUploadStatus(null), 3000);
+    } catch (error) {
+      setUploadStatus({ 
+        type: "error", 
+        message: "Failed to upload questions. Please check your data and try again." 
+      });
+      setTimeout(() => setUploadStatus(null), 5000);
+    }
+    setIsUploading(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
+            Upload Questions
+          </h1>
+          <p className="text-slate-600">
+            Add new HSC German questions with marking criteria to the database
+          </p>
+        </motion.div>
+
+        {/* Status Alert */}
+        <AnimatePresence>
+          {uploadStatus && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-6"
+            >
+              <Alert variant={uploadStatus.type === "success" ? "default" : "destructive"}>
+                {uploadStatus.type === "success" ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                <AlertDescription>{uploadStatus.message}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tab Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200/60 p-6 mb-8"
+        >
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <Button
+              variant={activeTab === "single" ? "default" : "outline"}
+              onClick={() => setActiveTab("single")}
+              className="flex-1 gap-2 rounded-xl"
+            >
+              <Plus className="w-4 h-4" />
+              Single Question
+            </Button>
+            <Button
+              variant={activeTab === "bulk" ? "default" : "outline"}
+              onClick={() => setActiveTab("bulk")}
+              className="flex-1 gap-2 rounded-xl"
+            >
+              <UploadIcon className="w-4 h-4" />
+              Bulk Upload
+            </Button>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {activeTab === "single" ? (
+              <motion.div
+                key="single"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <QuestionForm 
+                  onSubmit={handleSingleUpload} 
+                  isSubmitting={isUploading} 
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="bulk"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <BulkUpload 
+                  onSubmit={handleBulkUpload} 
+                  isSubmitting={isUploading} 
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
