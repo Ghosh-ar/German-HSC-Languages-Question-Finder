@@ -1,0 +1,97 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Minus, Save } from "lucide-react";
+
+const themes = [
+  "Familie und Freundschaft",
+  "Schule und Bildung", 
+  "Arbeit und Beruf",
+  "Umwelt und Nachhaltigkeit",
+  "Reisen und Tourismus",
+  "Technologie und Medien",
+  "Kultur und Tradition",
+  "Geschichte und Politik",
+  "Sport und Freizeit",
+  "Gesundheit und Lebensstil",
+  "Literatur und Kunst",
+  "Deutsche Gesellschaft",
+  "Globalisierung",
+  "Jugend und Identität",
+  "Integration und Migration"
+];
+
+const skillTypes = ["reading", "writing", "listening", "speaking", "grammar"];
+const difficultyLevels = ["basic", "intermediate", "advanced"];
+
+export default function QuestionForm({ onSubmit, isSubmitting }) {
+  const [formData, setFormData] = useState({
+    question_text: "",
+    year: new Date().getFullYear(),
+    paper_type: "continuers",
+    section: "",
+    question_number: "",
+    theme: "",
+    subtopic: "",
+    skill_type: "",
+    difficulty_level: "intermediate",
+    marks: "",
+    marking_criteria: "",
+    sample_answer: "",
+    key_points: [""],
+    tags: [""],
+    notes: ""
+  });
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleArrayChange = (field, index, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addArrayItem = (field) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], ""]
+    }));
+  };
+
+  const removeArrayItem = (field, index) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Clean up data
+    const cleanedData = {
+      ...formData,
+      marks: formData.marks ? parseInt(formData.marks) : null,
+      key_points: formData.key_points.filter(point => point.trim() !== ""),
+      tags: formData.tags.filter(tag => tag.trim() !== "")
+    };
+
+    onSubmit(cleanedData);
+    
+    // Reset form
+    setFormData({
+      question_text: "",
+      year: new Date().getFullYear(),
+      paper_type: "continuers",
+      section: "",
+      question_number: "",
+      theme: "",
+      subtopic: "",
+ 
